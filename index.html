@@ -69,6 +69,8 @@ label{display:block;color:var(--mu);margin-bottom:6px;font-size:13px}
 .card.cr .art{width:70%;margin-top:6%}
 .card.no{filter:brightness(.55)}.card.ok{cursor:pointer}
 .card.ok:hover{transform:translateY(-14px)}
+.cs{display:flex}.cs .card+.card{margin-left:-38px}
+.hand .card.sel{transform:translateY(-18px);box-shadow:0 0 0 2px var(--gd),0 6px 12px #000a}
 .fresh .card{animation:deal .4s 2.4s both}
 @keyframes deal{from{transform:translateY(50px);opacity:0}}
 @keyframes drop{from{transform:translateY(-24px) scale(1.08);opacity:0}}
@@ -109,7 +111,27 @@ const R=['3','4','5','6','7','8','9','10','V','C','D','R','A','2'],S=['♥','♠
 // cartes : 0-55 normales (couleur=⌊c/14⌋, rang=c%14) · 56-76 atouts 1..21 · 77 excuse · dame de cœur = 10
 const isT=c=>c>=56&&c<77;
 const str=c=>c<56?c%14:(v=>v>=3?v-3:v+18)(c-55);
-const canPlay=(c,t)=>!t||c===77||(isT(c)===isT(t.c)&&str(c)>str(t.c));
+const kind=c=>c===77?2:isT(c)?1:0;
+const compat=(a,c)=>kind(a)===kind(c)&&kind(c)!==2&&(kind(c)===1||a%14===c%14);
+// un coup = plusieurs normales identiques, OU une suite d'atouts, OU l'Excuse seule ; t = pli en cours
+function valid(cs,t){
+  if(!cs.length)return false;
+  if(cs.length===1&&cs[0]===77)return true;
+  const k=kind(cs[0]);if(k===2||cs.some(c=>kind(c)!==k))return false;
+  const ss=cs.map(str).sort((a,b)=>a-b);
+  if(k===0){if(!cs.every(c=>c%14===cs[0]%14))return false}
+  else for(let i=1;i<ss.length;i++)if(ss[i]!==ss[i-1]+1)return false;
+  return !t||(k===t.t&&cs.length===t.cs.length&&ss[ss.length-1]>t.s);
+}
+// cartes de la main qui peuvent faire partie d'un coup valide
+function selectable(h,t){
+  const S=new Set();if(h.includes(77))S.add(77);
+  if(!t||t.t===0){const g={};h.filter(c=>c<56).forEach(c=>(g[c%14]=g[c%14]||[]).push(c));
+    for(const r in g)if(!t||(g[r].length>=t.cs.length&&+r>t.s))g[r].forEach(c=>S.add(c))}
+  if(!t||t.t===1){const a=h.filter(isT).sort((x,y)=>str(x)-str(y)),n=t?t.cs.length:1;
+    for(let i=0;i+n<=a.length;i++){const w=a.slice(i,i+n);if(str(w[n-1])-str(w[0])===n-1&&(!t||str(w[n-1])>t.s))w.forEach(c=>S.add(c))}}
+  return S;
+}
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const $=s=>document.querySelector(s);
 
@@ -157,7 +179,7 @@ function card(c,cls=''){
 }
 
 /* ---------- état local ---------- */
-let code,me,meta={},players={},st=null,hand=[],unsub=[],dir=1,fresh=false,lastDeal=0;
+let code,me,meta={},players={},st=null,hand=[],unsub=[],dir=1,fresh=false,lastDeal=0,sel=[];
 const store=JSON.parse(localStorage.getItem('fg')||'{}');
 const app=$('#app'),nm=id=>players[id]?players[id].n:'?';
 const rk=r=>r===0?'1er':(r+1)+'e';
@@ -214,17 +236,18 @@ function game(){
   const i=o.indexOf(me),oth=[];for(let k=1;k<o.length;k++)oth.push(o[(i+k)%o.length]);
   const seat=id=>{const r=fin.indexOf(id);return `<div class="seat ${st.turn===id&&!over?'turn':''} ${r>=0?'done':''}"><b>${esc(nm(id))}</b><span>${r>=0?rk(r):ps[id]?'passe':cnt[id]+' cartes'}</span></div>`};
   const can=my&&!ps[me]&&!fin.includes(me);
-  const h=sorted(),some=can&&h.some(c=>canPlay(c,tb));
-  let bar=over?'Partie terminée':fin.includes(me)?`Tu as fini ${rk(fin.indexOf(me))} !`:my?(tb?(some?'À toi de jouer':'Aucune carte jouable : passe ton tour'):'À toi d\'ouvrir le pli'):ps[me]?'Tu as passé, en attente du pli…':`Au tour de ${esc(nm(st.turn))}`;
+  sel=sel.filter(c=>hand.includes(c));if(!can)sel=[];const h=sorted(),SL=can?selectable(hand,tb):new Set(),some=SL.size>0,sl0=($('.hand')||{}).scrollLeft||0;
+  let bar=over?'Partie terminée':fin.includes(me)?`Tu as fini ${rk(fin.indexOf(me))} !`:my?(tb?(some?`À toi : ${tb.cs.length>1?tb.cs.length+' cartes':'1 carte'} ${tb.t?'d\'atout':'identique'}${tb.cs.length>1&&tb.t?' en suite':''}, plus forte${tb.cs.length>1?'s':''}`:'Aucune carte jouable : passe ton tour'):'À toi d\'ouvrir : cartes identiques ou suite d\'atouts'):ps[me]?'Tu as passé, en attente du pli…':`Au tour de ${esc(nm(st.turn))}`;
   app.innerHTML=`<div class="game"><div class="top"><span>Partie ${code}</span><button data-a="rules">Règles</button></div>
   <div class="seats">${oth.map(seat).join('')}</div>
-  <div class="mid"><div class="pile">${tb?card(tb.c)+`<span class="msg">${esc(nm(tb.p))}</span>`:'<div class="empty">Table<br>vide</div>'}</div>
+  <div class="mid"><div class="pile">${tb?`<div class="cs">${tb.cs.map(c=>card(c)).join('')}</div><span class="msg">${esc(nm(tb.p))}</span>`:st.lp?`${card(77)}<span class="msg">${esc(nm(st.lp.p))} · Excuse</span>`:'<div class="empty">Table<br>vide</div>'}</div>
   <p class="msg">${esc(st.msg||'')}</p><p class="turnbar">${bar}</p></div>
   <div class="ctl"><button data-a="asc" class="${dir>0?'on':''}">Tri croissant</button><button data-a="desc" class="${dir<0?'on':''}">Tri décroissant</button>
-  ${can&&tb?`<button class="pri" data-a="pass">Passer</button>`:''}</div>
-  <div class="hand ${fresh?'fresh':''}">${h.map(c=>card(c,can&&canPlay(c,tb)?'ok':'no')).join('')}</div></div>
+  ${can?`<button class="pri" data-a="play" ${valid(sel,tb)?'':'disabled'}>Jouer${sel.length?' ('+sel.length+')':''}</button>`:''}${can&&tb?`<button data-a="pass">Passer</button>`:''}</div>
+  <div class="hand ${fresh?'fresh':''}">${h.map(c=>card(c,(sel.includes(c)?'sel ':'')+(SL.has(c)?'ok':'no'))).join('')}</div></div>
   ${over?`<div class="res"><div class="panel"><h2>Classement</h2><ol>${fin.map((id,k)=>`<li>${esc(nm(id))}${k===fin.length-1?' — a perdu':''}</li>`).join('')}</ol>
   ${meta.host===me?'<button class="pri" data-a="again">Rejouer</button>':'<p class="sub">L\'hôte peut relancer une partie.</p>'}<button data-a="leave">Quitter</button></div></div>`:''}`;
+const hd=$('.hand');if(hd)hd.scrollLeft=sl0;
 }
 
 /* ---------- actions ---------- */
@@ -243,23 +266,26 @@ function start(){
     state:{o:ids,turn,tb:null,ps:{},fin:[],cnt,seq:1,msg:`${players[turn].n} commence`},
     'meta/st':'play','meta/deal':Date.now()});
 }
-// c = carte jouée, ou null pour passer. Une seule écriture groupée par action.
-function act(c){
+// cs = cartes jouées (tableau), ou null pour passer. Une seule écriture groupée par action.
+function act(cs){
   if(!st||st.turn!==me)return;
-  const o=st.o,fin=[...(st.fin||[])],ps={...(st.ps||{})},cnt={...st.cnt};let tb=st.tb,hnd=null,msg;
-  if(c!==null){hnd=hand.filter(x=>x!==c);cnt[me]=hnd.length;if(!hnd.length)fin.push(me);tb={p:me,c};
-    msg=`${nm(me)} joue`+(c===77?' l\'Excuse':'')+(hnd.length?'':' et a fini !')}
+  if(cs&&!valid(cs,st.tb))return;
+  const o=st.o,fin=[...(st.fin||[])],ps={...(st.ps||{})},cnt={...st.cnt};let tb=st.tb,hnd=null,msg,lp=null;
+  const ex=!!(cs&&cs[0]===77);
+  if(cs){hnd=hand.filter(x=>!cs.includes(x));cnt[me]=hnd.length;if(!hnd.length)fin.push(me);
+    tb=ex?{p:me,cs:[77]}:{p:me,cs,t:isT(cs[0])?1:0,s:Math.max(...cs.map(str))};if(ex)lp={p:me};
+    msg=`${nm(me)} joue `+(ex?'l\'Excuse':cs.length>1?cs.length+' cartes':'une carte')+(hnd.length?'':' et a fini !')}
   else{ps[me]=true;msg=`${nm(me)} passe`}
   const left=o.filter(x=>!fin.includes(x)),over=left.length<=1;if(over&&left[0])fin.push(left[0]);
   let turn=null;
   if(!over){
-    const idx=o.indexOf(me);let end=c===77;
+    const idx=o.indexOf(me);let end=ex;
     if(!end){end=true;for(let k=1;k<o.length;k++){const q=o[(idx+k)%o.length];if(q===tb.p)break;if(fin.includes(q)||ps[q])continue;turn=q;end=false;break}}
     if(end){let w=tb.p;const wi=o.indexOf(w);
       if(fin.includes(w))for(let k=1;k<o.length;k++){const q=o[(wi+k)%o.length];if(!fin.includes(q)){w=q;break}}
-      turn=w;msg+=` · ${nm(tb.p)} remporte le pli`;tb=null;msg+=''}
+      turn=w;msg+=` · ${nm(tb.p)} remporte le pli`;tb=null}
   }
-  const u={state:{o,turn,tb,ps:turn===null||!tb?{}:ps,fin,cnt,seq:(st.seq||0)+1,msg}};
+  const u={state:{o,turn,tb,ps:turn===null||!tb?{}:ps,fin,cnt,seq:(st.seq||0)+1,msg,lp}};
   if(hnd)u['hands/'+me]=hnd;if(over)u['meta/st']='over';
   update(ref(db,'g/'+code),u);
 }
@@ -281,21 +307,26 @@ function showRules(){
   <li>Excuse : elle bat tout, mais pour un seul pli.</li></ul>
   <h3>Distribution</h3><p>Les cartes sont mélangées puis distribuées par paquets de 3 puis de 2, chacun reçoit le même nombre de cartes. Les cartes en trop ne sont pas utilisées, de 2 à 8 joueurs.</p>
   <h3>Un pli</h3><ul><li>Le joueur qui a la Dame de cœur commence (sinon, tirage au sort) et pose une carte.</li>
-  <li>Les suivants jouent, dans l'ordre, une carte <b>plus forte</b> du <b>même type</b> : normale sur normale, atout sur atout.</li>
+  <li>Tu peux jouer <b>plusieurs cartes à la fois</b> : des normales de même valeur (2, 3 ou 4 cartes identiques), ou une <b>suite d'atouts</b> (par exemple 5-6-7). Sélectionne tes cartes puis appuie sur « Jouer ».</li><li>Les suivants doivent jouer <b>autant de cartes</b>, du <b>même type</b> et de valeur plus forte : normales identiques sur normales identiques, suite d'atouts sur une suite d'atouts plus haute de même longueur.</li>
   <li>On n'est jamais obligé de jouer : on peut passer, mais on ne joue plus jusqu'à la fin du pli.</li>
   <li>Quand tous les autres ont passé, le dernier à avoir joué remporte le pli et ouvre le suivant.</li>
-  <li>L'Excuse se joue à tout moment : elle remporte aussitôt le pli, et son joueur rejoue.</li></ul>
+  <li>L'Excuse se joue à tout moment : elle remporte aussitôt le pli, et son joueur rejoue. Elle se joue toujours seule.</li></ul>
   <p style="margin-top:10px">Le jeu grise les cartes que tu ne peux pas jouer.</p>`;
   $('#modal').style.display='flex';
 }
 $('#mc').onclick=()=>$('#modal').style.display='none';
 
 app.onclick=async e=>{
-  const cd=e.target.closest('.hand .card.ok');if(cd){act(+cd.dataset.c);return}
+  const cd=e.target.closest('.hand .card.ok');if(cd){const c=+cd.dataset.c,n=st.tb?st.tb.cs.length:0;
+    if(sel.includes(c))sel=sel.filter(x=>x!==c);
+    else if(sel.length&&(!n||sel.length<n)&&sel.every(a=>compat(a,c)))sel=[...sel,c];
+    else sel=[c];
+    render();return}
   const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a;
   if(a==='rules')showRules();
   else if(a==='asc'){dir=1;render()}else if(a==='desc'){dir=-1;render()}
   else if(a==='pass')act(null);
+  else if(a==='play'){const cs=[...sel];sel=[];act(cs)}
   else if(a==='start')start();
   else if(a==='leave')leave();
   else if(a==='again')update(ref(db,'g/'+code),{state:null,hands:null,'meta/st':'lobby'});
