@@ -61,6 +61,12 @@ label{display:block;color:var(--mu);margin-bottom:6px;font-size:13px}
 .card.at{background:linear-gradient(160deg,#243349,#182234);color:#dcc48c;border:1px solid var(--gd)}
 .card.at b{font-size:36px}
 .card.ex{background:#101512;color:var(--gd);border:1px solid var(--gd)}
+.art{width:100%;height:auto;stroke:#1b1712;stroke-width:1.3;stroke-linejoin:round;stroke-linecap:round}
+.r{fill:#b5372e}.b{fill:#2f5d8a}.y{fill:#dfae3c}.f{fill:#e6c49c}.g{fill:#4d7c4f}.k{fill:#1b1712}.w{fill:#fbf8ef}
+.card.at,.card.ex{background:var(--iv);color:#2a2118;border:1px solid #3a2f22;justify-content:space-between;padding:3px 4px}
+.card .nu{font:700 calc(var(--w)*.17)/1 Georgia,serif}
+.card .na{font:600 calc(var(--w)*.1)/1 Inter,sans-serif;text-align:center;letter-spacing:0;white-space:nowrap;margin:0}
+.card.cr .art{width:70%;margin-top:6%}
 .card.no{filter:brightness(.55)}.card.ok{cursor:pointer}
 .card.ok:hover{transform:translateY(-14px)}
 .fresh .card{animation:deal .4s 2.4s both}
@@ -107,13 +113,48 @@ const canPlay=(c,t)=>!t||c===77||(isT(c)===isT(t.c)&&str(c)>str(t.c));
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const $=s=>document.querySelector(s);
 
+/* ---------- illustrations (style tarot de Marseille, SVG maison) ---------- */
+const F=(c,h='')=>`<path class="${c}" d="M18 78L22 38Q30 32 38 38L42 78z"/><circle class="f" cx="30" cy="25" r="6.5"/>${h}`;
+const CR='<path class="y" d="M22 21l2-9 6 5 6-5 2 9z"/>',TI='<path class="y" d="M23 20l7-14 7 14z"/>',HAT='<ellipse class="y" cx="30" cy="19" rx="13" ry="3.5"/><path class="y" d="M24 19q6-9 12 0z"/>';
+const ART={
+1:F('r',HAT)+'<rect class="b" x="8" y="54" width="44" height="5"/><path d="M40 42l9-10"/><circle class="y" cx="14" cy="49" r="3.5"/>',
+2:F('b',TI)+'<rect class="w" x="21" y="52" width="18" height="11"/><path d="M30 52v11"/>',
+3:F('r',CR)+'<path class="y" d="M40 48h11v8q-5.5 6-11 0z"/><path d="M12 30v46"/>',
+4:F('b',CR)+'<rect class="y" x="12" y="62" width="36" height="7"/><circle class="y" cx="46" cy="46" r="4"/><path d="M46 50v12"/>',
+5:F('r','<path class="y" d="M22 21l3-7 5-6 5 6 3 7z"/>')+'<path d="M48 20v58M43 28h10"/>',
+6:'<circle class="f" cx="19" cy="34" r="5.5"/><circle class="f" cx="41" cy="34" r="5.5"/><path class="b" d="M11 76l4-34h8l4 34z"/><path class="r" d="M33 76l4-34h8l4 34z"/><path class="y" d="M30 4l3 7 7 1-5 5 1 7-6-4-6 4 1-7-5-5 7-1z"/>',
+7:'<path class="y" d="M10 32h40l-4-10H14z"/><rect class="b" x="12" y="32" width="36" height="24"/><circle class="f" cx="30" cy="42" r="5.5"/><circle class="r" cx="17" cy="62" r="7"/><circle class="r" cx="43" cy="62" r="7"/><path class="w" d="M4 76q4-8 12-6v8zM56 76q-4-8-12-6v8z"/>',
+8:F('r',CR)+'<path d="M47 12v52"/><path d="M6 40h22"/><circle class="y" cx="8" cy="47" r="3.5"/><circle class="y" cx="26" cy="47" r="3.5"/>',
+9:F('b','<path class="b" d="M21 27q9-18 18 0z"/>')+'<path d="M47 24v54"/><rect class="y" x="42" y="46" width="8" height="10"/>',
+10:'<circle class="y" cx="30" cy="42" r="19"/><circle class="w" cx="30" cy="42" r="6"/><path d="M30 23v38M11 42h38M17 29l26 26M43 29L17 55"/><circle class="r" cx="30" cy="10" r="5"/><path class="b" d="M6 72l6-14 6 14zM42 72l6-14 6 14z"/>',
+11:F('b','<path class="y" d="M20 20q5-6 10 0t10 0"/>')+'<path class="r" d="M4 78q0-16 14-14l12 6v8z"/><circle class="y" cx="16" cy="60" r="6"/>',
+12:'<path d="M6 6h48M10 6v12M50 6v12"/><path class="b" d="M23 18h14l-3 30h-8z"/><circle class="f" cx="30" cy="55" r="7"/><path class="r" d="M23 18l-4-8M37 18l4-8"/>',
+13:'<circle class="w" cx="30" cy="20" r="8"/><path class="w" d="M27 29h6v30h-6zM19 35h22M21 44h18"/><path d="M48 8v70"/><path class="r" d="M48 8Q24 2 26 26z"/><path class="f" d="M6 78q4-8 8 0zM52 78q4-8 8 0z"/>',
+14:'<path class="b" d="M3 34q10-18 22 0zM57 34q-10-18-22 0z"/><path class="y" d="M22 42l6-12h4l6 12z"/><circle class="f" cx="30" cy="23" r="6"/><path class="r" d="M14 62h9l-3 14h-4zM37 62h9l-3 14h-4z"/><path d="M19 62q11 8 22 0"/>',
+15:'<path class="r" d="M20 30l-7-16 12 9zM40 30l7-16-12 9z"/><circle class="r" cx="30" cy="32" r="10"/><path class="k" d="M12 46l-9 14 17-4zM48 46l9 14-17-4z"/><rect class="b" x="21" y="42" width="18" height="20"/><circle class="f" cx="13" cy="70" r="4"/><circle class="f" cx="47" cy="70" r="4"/><path d="M6 78h48"/>',
+16:'<path class="r" d="M20 78V32h20v46z"/><path class="y" d="M15 32h30l-5-11H20z"/><rect class="b" x="27" y="44" width="6" height="9"/><path class="y" d="M52 4L40 22l7 1-9 15"/><circle class="r" cx="10" cy="66" r="3"/><circle class="y" cx="50" cy="62" r="3"/>',
+17:'<path class="y" d="M30 4l5 11 12 1-9 8 3 12-11-7-11 7 3-12-9-8 12-1z"/><circle class="f" cx="20" cy="52" r="5.5"/><path class="b" d="M11 78l4-20h11l4 20z"/><path class="r" d="M32 60h9l-2 10h-5z"/><path d="M41 66q10 0 15 10"/>',
+18:'<path class="y" d="M30 6a13 13 0 1 0 0 26a9.5 9.5 0 1 1 0-26z"/><rect class="r" x="4" y="50" width="12" height="22"/><rect class="r" x="44" y="50" width="12" height="22"/><path class="w" d="M22 68l5-9 7 5-2 8z"/><path d="M4 76q13 6 26 0t26 0"/>',
+19:'<circle class="y" cx="30" cy="24" r="10"/><path d="M30 4v6M30 38v6M8 24h6M46 24h6M14 8l4 4M46 8l-4 4M14 40l4-4M46 40l-4-4"/><circle class="f" cx="19" cy="56" r="4.5"/><circle class="f" cx="41" cy="56" r="4.5"/><rect class="r" x="14" y="61" width="10" height="13"/><rect class="b" x="36" y="61" width="10" height="13"/><path d="M4 76h52"/>',
+20:'<path class="b" d="M8 36q22-16 44 0z"/><path class="w" d="M4 26q10-12 20 0zM56 26q-10-12-20 0z"/><circle class="f" cx="30" cy="18" r="5.5"/><path class="y" d="M35 20l16 3-16 7z"/><circle class="f" cx="13" cy="60" r="4.5"/><circle class="f" cx="30" cy="64" r="4.5"/><circle class="f" cx="47" cy="60" r="4.5"/><rect class="w" x="6" y="66" width="14" height="10"/><rect class="w" x="23" y="70" width="14" height="6"/><rect class="w" x="40" y="66" width="14" height="10"/>',
+21:'<ellipse class="g" cx="30" cy="40" rx="19" ry="28"/><ellipse class="w" cx="30" cy="40" rx="13" ry="22"/><circle class="f" cx="30" cy="27" r="4.5"/><path class="r" d="M26 33h8l4 22H22z"/><circle class="y" cx="6" cy="6" r="4"/><circle class="b" cx="54" cy="6" r="4"/><circle class="r" cx="6" cy="74" r="4"/><circle class="g" cx="54" cy="74" r="4"/>',
+77:'<circle class="f" cx="27" cy="24" r="6.5"/><path class="r" d="M19 20l8-13 9 13z"/><path class="y" d="M19 78l4-42h11l9 20-5 22z"/><path d="M38 34l11-20"/><circle class="b" cx="51" cy="12" r="4.5"/><path class="w" d="M4 74l10-8 6 12z"/>'};
+const NAME=["","Le Bateleur","La Papesse","L'Impératrice","L'Empereur","Le Pape","L'Amoureux","Le Chariot","La Justice","L'Ermite","La Roue","La Force","Le Pendu","Sans nom","Tempérance","Le Diable","La Maison Dieu","L'Étoile","La Lune","Le Soleil","Le Jugement","Le Monde"];
+const SUITC=['r','k','g','y'];
+const COURT=[ // V, C, D, R (rang 8 à 11), robe = couleur de la famille
+ s=>F(SUITC[s],'<path class="r" d="M23 21q7-11 14 0z"/><path d="M38 14q6-4 8 2"/>')+'<path d="M47 14v62"/>',
+ s=>'<path class="w" d="M6 70q4-16 20-16h13l8-14 5 4-5 17v21h-5V70H19v14h-5V70z"/><circle class="f" cx="30" cy="30" r="6"/><path class="'+SUITC[s]+'" d="M22 36l4 20h10l4-20q-7-4-18 0z"/><path class="r" d="M23 26q7-10 14 0z"/>',
+ s=>F(SUITC[s],'<path class="w" d="M22 24q8-16 16 0v11H22z"/>'+CR)+'<circle class="r" cx="47" cy="44" r="4"/><path d="M47 48v28"/>',
+ s=>F(SUITC[s],CR)+'<rect class="y" x="12" y="60" width="36" height="6"/><path d="M46 20v40"/><circle class="y" cx="46" cy="18" r="3.5"/>'];
 function card(c,cls=''){
-  if(c===77)return `<div class="card ex ${cls}"><b>★</b><small>EXCUSE</small></div>`;
-  if(isT(c)){const v=c-55;return `<div class="card at ${cls}" data-c="${c}"><i>${v}</i><b>${v}</b><i>${v}</i><small>ATOUT</small></div>`}
-  const s=Math.floor(c/14),r=R[c%14],red=s===0||s===3?'red':'';
-  return `<div class="card ${red} ${cls}" data-c="${c}"><i>${r}<br>${S[s]}</i><b>${S[s]}</b><i>${r}<br>${S[s]}</i></div>`;
+  const A=(k,x)=>`<svg class="art" viewBox="0 0 60 80" fill="none">${x}</svg>`;
+  if(c===77)return `<div class="card ex ${cls}" data-c="77"><span class="nu">★</span>${A(0,ART[77])}<span class="na">Le Mat</span></div>`;
+  if(isT(c)){const v=c-55;return `<div class="card at ${cls}" data-c="${c}"><span class="nu">${v}</span>${A(0,ART[v])}<span class="na">${NAME[v]}</span></div>`}
+  const s=Math.floor(c/14),ri=c%14,r=R[ri],red=s===0||s===3?'red':'';
+  const cn=`<i>${r}<br>${S[s]}</i>`;
+  if(ri>=8&&ri<=11)return `<div class="card cr ${red} ${cls}" data-c="${c}">${cn}${A(0,COURT[ri-8](s))}<i>${r}<br>${S[s]}</i></div>`;
+  return `<div class="card ${red} ${cls}" data-c="${c}">${cn}<b>${S[s]}</b><i>${r}<br>${S[s]}</i></div>`;
 }
-const cardX=(c,cls)=>card(c,cls).replace('class="card ex','data-c="77" class="card ex');
 
 /* ---------- état local ---------- */
 let code,me,meta={},players={},st=null,hand=[],unsub=[],dir=1,fresh=false,lastDeal=0;
