@@ -114,6 +114,41 @@ label{display:block;color:var(--mu);margin-bottom:6px;font-size:13px}
 .ds b{font:600 12px Inter,sans-serif;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ds em{font:normal 600 13px Inter,sans-serif;color:var(--gd)}
 .ds.bump .av{transform:scale(1.18)}
+/* connexion, accueil, amis */
+.ic{padding:6px 10px;font-size:15px;line-height:1}
+button.sm{padding:5px 10px;font-size:12px}
+.hint{color:var(--mu);font-size:13px;min-height:18px}
+.sec{color:var(--mu);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-top:6px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ln);margin-right:8px}
+.dot.on{background:var(--tx)}
+.au{display:grid;grid-template-columns:1fr 1fr;min-height:100%}
+.au-side{background:#0a0a0a;color:#fff;padding:44px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.au-side .brand{font:700 22px 'Cormorant Garamond',Georgia,serif;letter-spacing:.02em}
+.au-side h2{font-size:38px;line-height:1.1}
+.au-side p{color:#ffffff99;max-width:360px;margin-top:10px}
+.au-fan{display:flex;justify-content:center;align-items:center;padding:30px 0}
+.au-fan .card{--w:120px;margin:0 -16px;box-shadow:0 14px 30px #000a}
+.au-fan .card:nth-child(1){transform:rotate(-12deg) translateY(12px)}
+.au-fan .card:nth-child(2){transform:translateY(-12px);z-index:2}
+.au-fan .card:nth-child(3){transform:rotate(12deg) translateY(12px)}
+.au-main{display:flex;flex-direction:column;min-height:100%}
+.au-top{display:flex;justify-content:space-between;align-items:center;padding:18px 24px}
+.brand-m{display:none;font:700 22px 'Cormorant Garamond',Georgia,serif}
+.au-card{width:100%;max-width:380px;margin:auto;padding:16px 24px 32px;display:flex;flex-direction:column;gap:12px}
+.au-h{font-size:36px;line-height:1.1}
+.tabs{display:flex;gap:3px;background:var(--in);border:1px solid var(--ln);border-radius:10px;padding:3px}
+.tabs button{flex:1;border:0;background:none;padding:8px;border-radius:7px}
+.tabs button.on{background:var(--pn);font-weight:600;box-shadow:0 1px 3px #0003}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px}
+.gbtn img{width:18px;height:18px}
+.home2{max-width:920px;margin:0 auto;padding:28px 20px 40px}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.hd h1{font-size:40px}
+.hb{display:flex;gap:8px;flex-wrap:wrap}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.panel h2{font-size:24px}
+.plist li>span:last-child{display:flex;gap:6px;align-items:center}
+@media(max-width:860px){.au{grid-template-columns:1fr}.au-side{display:none}.brand-m{display:block}.cols{grid-template-columns:1fr}.hd h1{font-size:32px}}
 </style></head>
 <body>
 <div id="app"></div>
@@ -242,7 +277,7 @@ function authScreen(){
   app.dataset.v='auth';const lg=amode==='login';
   app.innerHTML=`<div class="au"><aside class="au-side"><b class="brand">Family Games</b><div class="au-fan">${card(77)}${card(76)}${card(10)}</div>
   <div><h2>Les jeux de la famille, même à distance.</h2><p>Crée des parties privées, ajoute tes proches en amis et rejoins leurs tables en un clic.</p></div></aside>
-  <main class="au-main"><div class="au-top"><span></span><button class="ic" data-a="theme" title="Thème">◐</button></div>
+  <main class="au-main"><div class="au-top"><span class="brand-m">Family Games</span><button class="ic" data-a="theme" title="Thème">◐</button></div>
   <div class="au-card"><h1 class="au-h">${lg?'Bon retour':'Créer un compte'}</h1><p class="sub">${lg?'Connecte-toi pour retrouver tes amis et tes parties.':'Un compte pour jouer et ajouter tes amis.'}</p>
   <button class="gbtn" data-a="google"><img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="">Continuer avec Google</button>
   <div class="or">ou</div>
