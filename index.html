@@ -295,6 +295,7 @@ function enter(){
   unsub.forEach(f=>f());const b='g/'+code+'/';
   unsub=[
     onValue(ref(db,b+'meta'),s=>{const o=s.val();if(!o){leave();return}
+      if(o.game==='pili'){location.replace('pilipili.html#'+code);return}
       const isNew=o.st==='play'&&o.deal!==lastDeal&&localStorage.getItem('fgd'+code)!==String(o.deal)&&Date.now()-o.deal<30000;
       meta=o;if(o.st==='lobby'){st=null;hand=[]}
       if(isNew){lastDeal=o.deal;localStorage.setItem('fgd'+code,o.deal);pend=1;const a=$('#anim');a.style.display='flex';a.style.opacity=1;a.innerHTML='<p class="at">Préparation…</p>'}
@@ -311,7 +312,7 @@ function leave(){unsub.forEach(f=>f());unsub=[];code=me=null;meta={};st=null;han
 
 const GAMES=[
  {id:'atouts',n:'Les Atouts',d:'Jeu de tarot · 2 à 8 joueurs · débarrasse-toi de tes cartes le premier',ok:1,v:()=>card(76)},
- {id:'s1',n:'Prochain jeu',d:'Bientôt disponible',ok:0},
+ {id:'pili',n:'Piment',d:'Jeu de plis à paris · 2 à 8 joueurs · tiens ta parole, évite les piments',ok:1,v:()=>'<svg viewBox="0 0 56 60" width="44" height="46" style="fill:var(--rd)"><path d="M38 6c3-4 9-4 12 0-4 0-7 2-8 6 4 14-3 32-21 40C13 57 5 56 2 53c12-2 19-9 23-17 4-9 3-20 7-26 2-2 4-3 6-4z"/></svg>'},
  {id:'s2',n:'Prochain jeu',d:'Bientôt disponible',ok:0}];
 const FACES=[['classique','Classique'],['nuit','Nuit'],['papier','Papier'],['encre','Encre'],['pastel','Pastel'],['contraste','Contraste']];
 const BACKS=[['classique','Classique'],['marine','Marine'],['bordeaux','Bordeaux'],['or','Noir et or'],['blanc','Blanc'],['sable','Sable']];
@@ -559,7 +560,7 @@ app.onclick=async e=>{
       if(!ex)await set(ref(db,'names/'+k),user.uid);
       await set(ref(db,'users/'+user.uid),{n:v,t:Date.now(),prefs});prof={n:v};startSocial();render()}catch(x){err('Pseudo indisponible, réessaie.')}}
   else if(a==='create'){try{let c;do{c=gen()}while((await get(ref(db,'g/'+c+'/meta'))).exists());
-      me=user.uid;await set(ref(db,'g/'+c),{meta:{host:me,st:'lobby',game:t.dataset.g||'atouts'},players:{[me]:{n:prof.n,t:Date.now()}}});code=c;enter()}catch(x){err('Création impossible. Réessaie.')}}
+      me=user.uid;await set(ref(db,'g/'+c),{meta:{host:me,st:'lobby',game:t.dataset.g||'atouts'},players:{[me]:{n:prof.n,t:Date.now()}}});if(t.dataset.g==='pili'){location.href='pilipili.html#'+c;return}code=c;enter()}catch(x){err('Création impossible. Réessaie.')}}
   else if(a==='join')joinCode($('#cd').value.trim().toUpperCase());
   else if(a==='joinf')joinCode(t.dataset.c);
   else if(a==='addfriend')addFriend();
@@ -572,6 +573,7 @@ app.onkeydown=e=>{if(e.key!=='Enter'||e.target.tagName!=='INPUT')return;
 async function joinCode(c){
   if(!c)return err('Saisis un code.');
   try{const m=(await get(ref(db,'g/'+c+'/meta'))).val();if(!m)return err('Aucune partie avec ce code.');
+    if(m.game==='pili'){location.href='pilipili.html#'+c;return}
     const p=(await get(ref(db,'g/'+c+'/players'))).val()||{};
     if(p[user.uid]&&!p[user.uid].x){me=user.uid;code=c;return enter()}
     if(m.st!=='lobby')return err('Cette partie a déjà commencé.');
