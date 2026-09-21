@@ -4,6 +4,15 @@
 <script>document.documentElement.dataset.t=localStorage.getItem("fgt")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Family Games</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#111111">
+<meta name="application-name" content="Family Games">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Family Games">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -179,9 +188,15 @@ button.sm{padding:5px 10px;font-size:12px}
 .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;margin-top:8px}
 .opt{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 6px;font-size:13px}
 .opt .card{--w:46px;pointer-events:none}
+#pwa{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));max-width:420px;margin:0 auto;z-index:30;background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:14px;display:none;flex-direction:column;gap:12px;box-shadow:0 12px 32px #0005;transform:translateY(24px);opacity:0;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .3s}
+#pwa.on{display:flex}#pwa.in{transform:none;opacity:1}
+#pwa .h{display:flex;gap:12px;align-items:center}#pwa img{width:46px;height:46px;border-radius:11px;flex:none}
+#pwa b{display:block;font-size:16px}#pwa small{color:var(--mu);display:block;line-height:1.35}
+#pwa .ac{display:flex;gap:8px;justify-content:flex-end;align-items:center}
 </style></head>
 <body>
 <div id="app"></div>
+<div id="pwa" role="dialog" aria-label="Installer l'application"></div>
 <div id="anim"></div>
 <div id="sm"><div class="box" id="smb"></div></div>
 <div id="cf"><div class="box"><h2 id="cft"></h2><p id="cfp" style="margin:8px 0 16px"></p><div class="row" style="justify-content:flex-end"><button data-k="no">Annuler</button><button class="pri" data-k="yes">Quitter</button></div></div></div>
@@ -401,9 +416,10 @@ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a
 
 function start(){
   const ids=Object.keys(players).filter(i=>!players[i].x).sort((a,b)=>players[a].t-players[b].t),n=ids.length,d=shuffle([...Array(78).keys()]);
-  const per=Math.floor(78/n),H={};ids.forEach(i=>H[i]=[]);
+  // à 2 joueurs : le jeu est réparti en 3 paquets, le 3e n'est pas utilisé
+  const sl=n<3?[...ids,null]:ids,per=Math.floor(78/sl.length),H={},got=sl.map(()=>0);ids.forEach(i=>H[i]=[]);
   let k=0,size=3;
-  while(H[ids[n-1]].length<per){for(const i of ids){const m=Math.min(size,per-H[i].length);for(let j=0;j<m;j++)H[i].push(d[k++])}size=size===3?2:3}
+  while(got[sl.length-1]<per){sl.forEach((id,x)=>{const m=Math.min(size,per-got[x]);for(let j=0;j<m;j++){const c=d[k++];if(id)H[id].push(c)}got[x]+=m});size=size===3?2:3}
   const turn=ids.find(i=>H[i].includes(10))||ids[Math.random()*n|0],cnt={};ids.forEach(i=>cnt[i]=per);
   update(ref(db,'g/'+code),{hands:H,
     state:{o:ids,turn,tb:null,ps:{},fin:[],cnt,seq:1,msg:`${players[turn].n} commence`},
@@ -449,14 +465,14 @@ function fly(id,m){
 function dealAnim(){
   const a=$('#anim');
   if(matchMedia('(prefers-reduced-motion:reduce)').matches){a.style.display='none';return}
-  const o=st.o,n=o.length,per=Math.floor(78/n),first=st.msg||'',T=(f,d)=>tms.push(setTimeout(f,d));
+  const o=st.o,n=o.length,sl=n<3?[...o,null]:o,per=Math.floor(78/sl.length),first=st.msg||'',T=(f,d)=>tms.push(setTimeout(f,d));
   const pos=k=>{const g=Math.PI/2+((k-o.indexOf(me)+n)%n)*2*Math.PI/n;return [50+42*Math.cos(g),50+38*Math.sin(g)]};
   a.innerHTML=`<p class="at">Mélange…</p><div class="tbl">${o.map((id,k)=>{const [x,y]=pos(k);
     return `<div class="ds" data-id="${id}" style="left:${x}%;top:${y}%"><span class="av">${esc(nm(id).slice(0,1).toUpperCase())}</span><b>${esc(nm(id))}${id===me?' (toi)':''}</b><em>0</em></div>`}).join('')}
     <div class="deck sh">${Array.from({length:8},(_,k)=>`<i style="transform:translate(${k*.5}px,${-k*.8}px)"></i>`).join('')}</div></div><button class="link" id="sk">Passer l'animation</button>`;
   a.style.display='flex';a.style.opacity=1;$('#sk').onclick=endAnim;
-  const got={},seq=[];o.forEach(id=>got[id]=0);let sz=3;
-  while(got[o[n-1]]<per){for(const id of o){const m=Math.min(sz,per-got[id]);if(m>0){seq.push([id,m]);got[id]+=m}}sz=sz===3?2:3}
+  const got={},seq=[],K=id=>id||'_';sl.forEach(id=>got[K(id)]=0);let sz=3;
+  while(got[K(sl[sl.length-1])]<per){for(const id of sl){const m=Math.min(sz,per-got[K(id)]);if(m>0){if(id)seq.push([id,m]);got[K(id)]+=m}}sz=sz===3?2:3}
   const STEP=170,t0=1500;
   T(()=>{$('.at').textContent='Distribution…';$('.deck').classList.remove('sh')},t0-100);
   seq.forEach(([id,m],k)=>T(()=>fly(id,m),t0+k*STEP));
@@ -502,7 +518,7 @@ function showRules(){
   <h3>Force des cartes</h3><ul><li>Normales, de la plus faible à la plus forte : 3 &lt; 4 &lt; … &lt; 10 &lt; V &lt; C &lt; D &lt; R &lt; As &lt; 2.</li>
   <li>Atouts : 3 &lt; 4 &lt; … &lt; 21 &lt; 1 &lt; 2. Le 21 est battu par l'1, lui-même battu par le 2.</li>
   <li>Excuse : elle bat tout, mais pour un seul pli.</li></ul>
-  <h3>Distribution</h3><p>Les cartes sont mélangées puis distribuées par paquets de 3 puis de 2, chacun reçoit le même nombre de cartes. Les cartes en trop ne sont pas utilisées, de 2 à 8 joueurs.</p>
+  <h3>Distribution</h3><p>Les cartes sont mélangées puis distribuées par paquets de 3 puis de 2, chacun reçoit le même nombre de cartes. Les cartes en trop ne sont pas utilisées. À 2 joueurs, le jeu est réparti en 3 paquets égaux et le troisième n'est pas utilisé.</p>
   <h3>Un pli</h3><ul><li>Le joueur qui a la Dame de cœur commence (sinon, tirage au sort) et pose une carte.</li>
   <li>Tu peux jouer <b>plusieurs cartes à la fois</b> : des normales de même valeur (2, 3 ou 4 cartes identiques), ou une <b>suite d'atouts</b> (par exemple 5-6-7). Sélectionne tes cartes puis appuie sur « Jouer ».</li><li>Les suivants doivent jouer <b>autant de cartes</b>, du <b>même type</b> et de valeur plus forte : normales identiques sur normales identiques, suite d'atouts sur une suite d'atouts plus haute de même longueur.</li>
   <li>On n'est jamais obligé de jouer : on peut passer, mais on ne joue plus jusqu'à la fin du pli.</li>
@@ -596,5 +612,32 @@ onAuthStateChanged(auth,async u=>{
     if(s.code&&s.u===u.uid){try{const p=(await get(ref(db,`g/${s.code}/players/${u.uid}`))).val();if(p&&!p.x){code=s.code;me=u.uid;ready=true;enter();return}}catch(x){}}}
   ready=true;render();
 });
+</script>
+<script>
+if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+// Invitation à installer l'app
+(()=>{
+  const box=document.getElementById('pwa');
+  const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+  const standalone=matchMedia('(display-mode:standalone)').matches||navigator.standalone;
+  const snoozed=()=>Date.now()-(+ls.get('fgi')||0)<7*864e5;
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  let dp=null;
+  const hide=()=>{box.classList.remove('in');setTimeout(()=>box.classList.remove('on'),350)};
+  const show=guide=>{
+    if(standalone||snoozed()||box.classList.contains('on'))return;
+    box.innerHTML=`<div class="h"><img src="icon.png" alt=""><div><b>Installer Family Games</b><small>${guide?'Touche <b style="display:inline">Partager</b> puis « Sur l\'écran d\'accueil » pour jouer en plein écran.':'Ajoute le jeu à ton écran d\'accueil : plein écran, lancement en un geste.'}</small></div></div>
+    <div class="ac"><button class="link" data-p="no">${guide?'Fermer':'Plus tard'}</button>${guide?'':'<button class="pri" data-p="ok">Installer</button>'}</div>`;
+    box.classList.add('on');requestAnimationFrame(()=>requestAnimationFrame(()=>box.classList.add('in')));
+  };
+  addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;setTimeout(()=>show(false),2500)});
+  addEventListener('appinstalled',()=>{dp=null;hide()});
+  if(ios&&!standalone)setTimeout(()=>show(true),3500);
+  box.addEventListener('click',async e=>{
+    const a=e.target.closest('[data-p]');if(!a)return;
+    if(a.dataset.p==='no'){ls.set('fgi',Date.now());hide();return}
+    if(dp){dp.prompt();const r=await dp.userChoice;dp=null;hide();if(r.outcome!=='accepted')ls.set('fgi',Date.now())}
+  });
+})();
 </script>
 </body></html>
