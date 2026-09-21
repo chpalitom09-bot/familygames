@@ -1,6 +1,6 @@
 // Family Games — service worker
 // Incrémenter VERSION à chaque déploiement pour forcer la mise à jour du cache.
-const VERSION = 'fg-v1';
+const VERSION = 'fg-v2';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 const SHELL_FILES = [
@@ -10,7 +10,8 @@ const SHELL_FILES = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(SHELL).then(c => c.addAll(SHELL_FILES)));
+  // Tolérant : un fichier manquant (404) ne fait plus échouer l'installation du SW
+  e.waitUntil(caches.open(SHELL).then(c => Promise.allSettled(SHELL_FILES.map(f => c.add(f)))));
   self.skipWaiting();
 });
 
