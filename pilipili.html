@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<script>document.documentElement.dataset.t=localStorage.getItem("fgt")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")</script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111111"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.png">
+<title>Piment · Family Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f2f0;--bg2:#fff;--pn:#fff;--ln:#d9d9d5;--tx:#111;--mu:#66665f;--in:#f2f2f0;--rd:#c8372d;--or:#ef8a2a;--iv:#fffdf8}
+:root[data-t=dark]{--bg:#0a0a0b;--bg2:#1b1b1d;--pn:#151517;--ln:#2e2e32;--tx:#efefec;--mu:#8e8e93;--in:#0e0e0f;--iv:#f4f1ea}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(120% 90% at 50% 0,var(--bg2),var(--bg));color:var(--tx);font:15px/1.45 Inter,system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);overflow:hidden}
+#app{height:100%}
+h1,h2{font-family:'Cormorant Garamond',Georgia,serif;font-weight:700}
+h1{font-size:44px;line-height:1.05}h2{font-size:26px}
+button{font:inherit;color:inherit;background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:10px 16px;cursor:pointer}
+button:hover{border-color:var(--tx)}button.pri{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight:600}
+button.pri.hot{background:linear-gradient(135deg,var(--rd),var(--or));border:0;color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+.sub{color:var(--mu)}.panel{background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.lb{max-width:420px;margin:0 auto;padding:8vh 20px 30px;display:flex;flex-direction:column;gap:16px}
+.code{font:700 44px 'Cormorant Garamond',serif;letter-spacing:.25em;text-align:center}
+.pl{list-style:none;padding:0;display:flex;flex-direction:column;gap:6px}.pl li{display:flex;justify-content:space-between;padding:9px 12px;background:var(--in);border-radius:8px}
+svg.ch{width:1em;height:1em;color:var(--rd);fill:currentColor;vertical-align:-.12em}
+/* jeu */
+.g{height:100%;display:flex;flex-direction:column;max-width:760px;margin:0 auto}
+.top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:13px;color:var(--mu)}
+.top button{padding:6px 10px;font-size:13px}
+.ms{display:flex;justify-content:center;padding:0 14px;min-height:78px;perspective:800px}
+.mc{background:var(--pn);border:1px solid var(--ln);border-left:4px solid var(--rd);border-radius:12px;padding:8px 14px;max-width:420px;animation:flipin .7s cubic-bezier(.2,.8,.2,1)}
+.mc small{color:var(--mu);font-size:11px;letter-spacing:.08em;text-transform:uppercase}.mc b{display:block;font:700 20px 'Cormorant Garamond',serif}.mc p{font-size:13px;color:var(--mu);line-height:1.3}
+@keyframes flipin{from{transform:rotateX(-90deg) translateY(-20px);opacity:0}}
+.tbl{position:relative;flex:1;min-height:0}
+.st{position:absolute;transform:translate(-50%,-50%);text-align:center;min-width:76px;padding:6px 8px;border-radius:12px;border:1px solid transparent;transition:.3s;font-size:12px}
+.st .av{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--tx);color:var(--bg);font-weight:600}
+.st b{display:block;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:auto}
+.st.turn{border-color:var(--or);box-shadow:0 0 0 3px #ef8a2a33,0 0 24px #ef8a2a55;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px #ef8a2a22,0 0 32px #ef8a2a66}}
+.st em{display:block;font-style:normal;color:var(--mu);min-height:16px}.st em.rv{animation:flip .6s both;color:var(--tx);font-weight:600}
+@keyframes flip{from{transform:rotateY(90deg);opacity:0}}
+.st em.bump{animation:bump .5s}@keyframes bump{40%{transform:scale(1.5);color:var(--rd)}}
+.st i{display:block;min-height:14px;font-style:normal;font-size:12px;letter-spacing:1px}
+#pl{position:absolute;inset:0;pointer-events:none}
+.pc{position:absolute;left:var(--l1);top:var(--t1);transform:translate(-50%,-50%) rotate(var(--r));animation:fly .45s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes fly{from{left:var(--l0);top:var(--t0);opacity:.2;transform:translate(-50%,-50%) scale(.6)}}
+.pc.sw{left:var(--l2);top:var(--t2);opacity:0;transform:translate(-50%,-50%) scale(.35);transition:all .55s ease-in}
+.pc .c{--w:clamp(46px,13vw,66px)}
+.hint{position:absolute;left:0;right:0;top:44%;text-align:center;color:var(--mu);font-size:13px}
+.hd{display:flex;gap:6px;justify-content:center;padding:6px 8px 14px;min-height:118px;flex-wrap:wrap}
+.hd .c{--w:clamp(50px,14vw,68px);animation:deal .5s cubic-bezier(.2,.9,.3,1.2) both;transition:transform .2s}
+@keyframes deal{from{transform:translateY(90px) rotate(8deg);opacity:0}}
+.hd.my .c{cursor:pointer}.hd.my .c:hover{transform:translateY(-14px) scale(1.06)}
+.c{width:var(--w,64px);aspect-ratio:5/7;border-radius:9px;background:var(--iv);color:#111;border:1px solid #0002;position:relative;box-shadow:0 3px 10px #0003;font-family:'Cormorant Garamond',serif;overflow:hidden;flex:none}
+.c::before{content:"";position:absolute;left:0;right:0;top:0;height:13%;background:var(--b)}
+.c b{position:absolute;inset:0;display:grid;place-items:center;font-size:calc(var(--w)*.5);font-weight:700;padding-top:8%}
+.c i{position:absolute;font-style:normal;font-size:calc(var(--w)*.2);font-weight:700;line-height:1}.c i.a{left:8%;top:17%}.c i.z{right:8%;bottom:6%;transform:rotate(180deg)}
+.c svg{position:absolute;width:32%;left:34%;bottom:12%;color:var(--b);fill:currentColor;opacity:.85}
+.c.bk{background:repeating-linear-gradient(45deg,#7a1f2b 0 6px,#5e1621 6px 12px);border-color:#fff3}.c.bk *,.c.bk::before{display:none}
+/* pari */
+.bp{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(6px);z-index:5;overflow:hidden}
+.bp.on{display:flex;animation:fade .3s}@keyframes fade{from{opacity:0}}
+.glow{position:absolute;inset:-20%;background:radial-gradient(circle at 50% 45%,rgba(239,90,31,calc(.08 + var(--ht)*.5)),transparent 60%);transition:.4s}
+.pp{position:relative;width:150px;height:130px;display:grid;place-items:center}
+.chl{width:110px;height:110px;color:var(--rd);fill:currentColor;transform:scale(calc(.7 + var(--ht)*.6)) rotate(calc(-14deg + var(--ht)*28deg));filter:drop-shadow(0 0 calc(var(--ht)*26px) #ff5a1f);transition:transform .45s cubic-bezier(.34,1.56,.64,1),filter .3s}
+.sk{position:absolute;bottom:25%;left:var(--x);width:5px;height:5px;border-radius:50%;background:var(--or);opacity:0;animation:rise var(--d) linear infinite}
+@keyframes rise{20%{opacity:1}100%{opacity:0;transform:translateY(-130px) scale(.3)}}
+#bn{position:relative;font:700 96px/1 'Cormorant Garamond',serif;height:100px;overflow:hidden;min-width:100px;text-align:center}
+#bn span{display:block;animation:roll .3s cubic-bezier(.2,.9,.3,1.3)}@keyframes roll{from{transform:translateY(60%);opacity:0}}
+.bp small{color:var(--mu);margin-bottom:8px;position:relative}
+#dl{position:relative;display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;width:100%;padding:8px calc(50% - 32px);scrollbar-width:none}
+#dl::-webkit-scrollbar{display:none}
+#dl button{flex:none;width:64px;height:64px;border-radius:50%;scroll-snap-align:center;font:700 26px 'Cormorant Garamond',serif;padding:0}
+.bp .pri{position:relative;margin-top:12px;min-width:180px;padding:13px}
+.stamp{animation:stamp .6s cubic-bezier(.2,1.6,.4,1)}@keyframes stamp{from{transform:scale(3) rotate(-20deg);opacity:0}}
+.ov{position:absolute;inset:0;display:none;place-items:center;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(6px);z-index:6;padding:16px}
+.ov.on{display:grid;animation:fade .3s}.ov .panel{width:min(400px,100%)}
+.rw{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--in);border-radius:8px;animation:deal .5s both}
+.rw .d{font-weight:600}.rw .d.bad{color:var(--rd)}.rw .d.ok{color:#3c8a4b}
+.nx{height:3px;background:var(--ln);border-radius:2px;overflow:hidden}.nx i{display:block;height:100%;background:var(--rd);animation:bar 8.5s linear}@keyframes bar{from{width:0}to{width:100%}}
+#jk{position:absolute;left:0;right:0;bottom:130px;display:none;justify-content:center;gap:10px;z-index:7}#jk.on{display:flex;animation:fade .2s}
+#md{position:fixed;inset:0;background:#000a;display:none;place-items:center;z-index:20;padding:16px}#md.on{display:grid}#md .panel{max-width:440px;max-height:85vh;overflow:auto}
+#md ul{padding-left:18px}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute"><symbol id="ch" viewBox="0 0 56 60"><path d="M38 6c3-4 9-4 12 0-4 0-7 2-8 6 4 14-3 32-21 40C13 57 5 56 2 53c12-2 19-9 23-17 4-9 3-20 7-26 2-2 4-3 6-4z"/></symbol></svg>
+<div id="app"><p style="text-align:center;padding:40px;color:var(--mu)">Chargement…</p></div>
+<div id="md"><div class="panel" id="mb"></div></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import {getDatabase,ref,onValue,update,set,get,onDisconnect} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+const fb=initializeApp({apiKey:"AIzaSyDmdsmRQVFPFQugT-vbqz_qkqhThX190Ow",authDomain:"familygames-371bd.firebaseapp.com",
+  databaseURL:"https://familygames-371bd-default-rtdb.europe-west1.firebasedatabase.app",projectId:"familygames-371bd",
+  storageBucket:"familygames-371bd.firebasestorage.app",messagingSenderId:"1031229407251",appId:"1:1031229407251:web:bc5c8675ab987c8933bfe6"});
+const db=getDatabase(fb),auth=getAuth(fb),$=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const chl=n=>'<svg class="ch"><use href="#ch"/></svg>'.repeat(n);
+/* ---- règles ---- */
+const M={plain:['Sauce classique','Aucune règle spéciale.'],inv:['À l\'envers','La carte la plus faible gagne le pli.'],
+ snd:['Médaille d\'argent','La 2e carte la plus forte gagne le pli.'],odd:['Impair et fier','Les cartes impaires battent les paires.'],
+ nz:['Pas de zéro','Interdit de parier 0.'],blind:['À l\'aveugle','Tu paries sans voir tes cartes.'],
+ min:['Au moins','Réussi si tu gagnes au moins ton pari.'],max:['Au plus','Réussi si tu gagnes au plus ton pari.'],
+ dbl:['Double dose','Chaque échec coûte 2 piments.'],xh:['Cadeau piégé','Chacun donne sa plus haute carte à son voisin de gauche.'],
+ har:['Bonne entente','Si tout le monde réussit, tous perdent 1 piment.']};
+const A=(x,i)=>x?x[i]:undefined,N=(x,i)=>A(x,i)||0,BC=['#6f8f5a','#c9a24a','#d9782d','#c8372d','#7a1f2b','#111'];
+const chk=(m,w,b)=>m==='min'?w>=b:m==='max'?w<=b:w===b;
+const win=(m,tb)=>{let e=Object.entries(tb).map(([s,v])=>[+s,v]);if(m==='odd'){const o=e.filter(x=>x[1]%2);if(o.length)e=o}
+  e.sort((a,b)=>m==='inv'?a[1]-b[1]:b[1]-a[1]);return e[m==='snd'&&e.length>1?1:0][0]};
+const card=v=>{const j=v===0||v===56;return `<div class="c" data-v="${v}" style="--b:${BC[j?5:(v-1)/11|0]}"><i class="a">${j?'J':v}</i><b>${j?(v?'★':'0'):v}</b>${j?'<svg><use href="#ch"/></svg>':''}<i class="z">${j?'J':v}</i></div>`};
+/* ---- état ---- */
+let user,code,meta={},pl={},S=null,hand=[],unsub=[],built=0,k0=0,sw=0,pk=0,dt=0,ph0='',bk0=0;
+const act=()=>Object.keys(pl).filter(i=>!pl[i].x).sort((a,b)=>pl[a].t-pl[b].t),me=()=>S?S.o.indexOf(user.uid):-1;
+const nm=i=>pl[S.o[i]]?pl[S.o[i]].n:'?',DB=p=>ref(db,'g/'+code+(p?'/'+p:''));
+onAuthStateChanged(auth,async u=>{
+  if(!u){location.href='index.html'+location.hash;return}
+  user=u;code=location.hash.slice(1).toUpperCase();
+  try{const m=(await get(DB('meta'))).val();if(!m||m.game!=='pili'){location.href='index.html';return}
+    const p=(await get(DB('players'))).val()||{};
+    if(!p[u.uid]){if(m.st!=='lobby'||Object.keys(p).length>=8){alert('Impossible de rejoindre cette partie.');location.href='index.html';return}
+      const n=(await get(ref(db,'users/'+u.uid+'/n'))).val()||'Joueur';await set(DB('players/'+u.uid),{n,t:Date.now()})}
+    else if(p[u.uid].x)await set(DB('players/'+u.uid+'/x'),null);
+  }catch(e){location.href='index.html';return}
+  unsub=[onValue(DB('meta'),s=>{const o=s.val();if(!o){location.href='index.html';return}meta=o;R()}),
+    onValue(DB('players'),s=>{pl=s.val()||{};R()}),onValue(DB('state'),s=>{S=s.val();R()}),
+    onValue(DB('hands/'+u.uid),s=>{hand=Object.values(s.val()||{});P()})];
+  set(ref(db,'live/'+u.uid),{c:code,t:Date.now()});onDisconnect(ref(db,'live/'+u.uid)).remove();
+});
+function R(){if(!meta.st)return;
+  if(meta.st==='lobby'){built=0;S=null;return lobby()}
+  if(!S||!S.o)return;if(!built)build();P();
+  if(S.ph==='bet'&&S.o.every((_,i)=>A(S.bt,i)!=null)&&pk!==S.k){pk=S.k;update(DB('state'),{ph:'play'})}
+  if(S.ph==='score'&&meta.st==='play'&&act()[0]===user.uid&&dt!==S.k){dt=S.k;const kk=S.k,pp=S.o.map((_,i)=>N(S.p,i));setTimeout(()=>{if(S&&S.k===kk&&S.ph==='score')deal(kk+1,pp)},8500)}}
+/* ---- lobby ---- */
+function lobby(){const ids=act(),h=meta.host===user.uid;
+  $('#app').innerHTML=`<main class="lb"><div><h1>Piment</h1><p class="sub">Parie sur tes plis, tiens ta parole.</p></div><div class="panel"><small class="sub">Code à partager</small><div class="code">${code}</div>
+  <ul class="pl">${ids.map(i=>`<li><span>${esc(pl[i].n)}${i===user.uid?' (toi)':''}</span><small>${i===meta.host?'hôte':''}</small></li>`).join('')}</ul>
+  <p class="sub">${ids.length} joueur${ids.length>1?'s':''} · de 2 à 8</p>${h?`<button class="pri hot" data-a="start" ${ids.length<2?'disabled':''}>Lancer la partie</button>`:'<p class="sub">En attente de l\'hôte…</p>'}</div>
+  <div style="display:flex;justify-content:space-between"><button data-a="rules" style="border:0;background:none;text-decoration:underline;color:var(--mu)">Règles</button><button data-a="quit" style="border:0;background:none;text-decoration:underline;color:var(--mu)">Quitter</button></div></main>`}
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+function deal(k,P0){const o=S&&S.o&&k>1?S.o:act(),n=o.length,h=Math.min([3,4,5,6][(k-1)%4],56/n|0),ks=Object.keys(M).filter(x=>x!=='plain'),m=k===1?'plain':ks[Math.random()*ks.length|0];
+  const d=shuffle([...Array(56)].map((_,i)=>i+1)),H={};o.forEach((u,i)=>H[u]=d.slice(i*h,i*h+h));
+  if(m==='xh'){const g=o.map(u=>Math.max(...H[u]));o.forEach((u,i)=>H[u]=H[u].filter(c=>c!==g[i]));o.forEach((u,i)=>H[o[(i+1)%n]].push(g[i]))}
+  const z=o.map(()=>0),ld=(k-1)%n;
+  update(DB(),{hands:H,state:{o,k,h,m,ph:'bet',t:ld,ld,tc:0,w:z,p:P0||z},'meta/st':'play','meta/deal':Date.now()})}
+/* ---- jeu ---- */
+const gA=i=>{const n=S.o.length;return Math.PI/2+((i-me()+n)%n)*2*Math.PI/n},sp=i=>[50+41*Math.cos(gA(i)),47+39*Math.sin(gA(i))],pp=i=>[50+15*Math.cos(gA(i)),44+13*Math.sin(gA(i))];
+function build(){built=1;k0=0;sw=S.lt?S.lt.n:0;ph0='';bk0=0;
+  $('#app').innerHTML=`<div class="g"><div class="top"><button data-a="quit">← Quitter</button><span>Partie ${code}</span><span><button data-a="th">◐</button> <button data-a="rules">Règles</button></span></div>
+  <div class="ms" id="ms"></div><div class="tbl" id="tbl">${S.o.map((u,i)=>{const [x,y]=sp(i);return `<div class="st" id="s${i}" style="left:${x}%;top:${y}%"><span class="av">${esc(nm(i)[0]||'?').toUpperCase()}</span><b>${esc(nm(i))}${i===me()?' (toi)':''}</b><em></em><i></i></div>`}).join('')}
+  <div id="pl"></div><p class="hint" id="ht"></p><div class="bp" id="bp"></div><div class="ov" id="ov"></div></div><div id="jk"><button class="pri" data-j="56">Joker haut (56)</button><button class="pri" data-j="0">Joker bas (0)</button></div><div class="hd" id="hd"></div></div>`}
+function P(){if(!built||!S)return;const me_=me(),n=S.o.length,myT=S.ph==='play'&&S.t===me_,blind=S.m==='blind'&&S.ph==='bet';
+  if(S.k!==k0){k0=S.k;$('#pl').innerHTML='';$('#ms').innerHTML=`<div class="mc"><small>Manche ${S.k} · ${S.h} cartes</small><b>${M[S.m][0]}</b><p>${M[S.m][1]}</p></div>`}
+  S.o.forEach((_,i)=>{const s=$('#s'+i),b=A(S.bt,i),e=s.querySelector('em');s.classList.toggle('turn',S.ph==='play'&&S.t===i);
+    let t=S.ph==='bet'?(b!=null?'✓ prêt':'…'):`${N(S.w,i)} / ${b}`;
+    if(e.dataset.t!==t){const rv=ph0==='bet'&&S.ph==='play';e.dataset.t=t;e.textContent=t;e.className=rv?'rv':(S.ph!=='bet'?'bump':'');if(rv)e.style.animationDelay=i*.12+'s'}
+    s.querySelector('i').innerHTML=chl(N(S.p,i))});
+  ph0=S.ph;
+  const hd=$('#hd');hd.classList.toggle('my',myT);
+  const have=new Set(hand);[...hd.children].forEach(el=>{if(!have.has(+el.dataset.v))el.remove()});
+  hand.forEach(v=>{if(hd.querySelector(`[data-v="${v}"]`))return;const t=document.createElement('div');t.innerHTML=card(v);const el=t.firstChild;
+    el.style.animationDelay=Math.random()*.25+'s';const nx=[...hd.children].find(x=>+x.dataset.v>v);hd.insertBefore(el,nx||null)});
+  [...hd.children].forEach(el=>el.classList.toggle('bk',blind));
+  $('#ht').textContent=S.ph==='play'?(myT?'À toi de jouer':`Au tour de ${nm(S.t)}`):'';
+  betUI();pile();score()}
+function betUI(){const bp=$('#bp'),mine=A(S.bt,me())!=null;
+  if(S.ph!=='bet'){bp.className='bp';bk0=0;return}
+  bp.classList.add('on');
+  if(mine){if(bk0!==-S.k){bk0=-S.k;const w=S.o.filter((_,i)=>A(S.bt,i)==null).map((_,i)=>0).length;bp.innerHTML=`<div class="glow" style="--ht:.5"></div><div class="stamp" style="position:relative;text-align:center"><svg class="ch" style="font-size:80px"><use href="#ch"/></svg><h2>Pari posé</h2></div><small style="margin-top:6px">En attente des autres… (${w} restant${w>1?'s':''})</small>`}
+    else bp.querySelector('small').textContent=`En attente des autres… (${S.o.filter((_,i)=>A(S.bt,i)==null).length} restant(s))`;return}
+  if(bk0===S.k)return;bk0=S.k;const lo=S.m==='nz'?1:0,hi=S.h,W=72;let cur=-1;
+  bp.innerHTML=`<div class="glow" id="gl"></div><div class="pp" id="pp"><svg class="ch chl"><use href="#ch"/></svg></div><div id="bn"></div><small>plis à remporter</small>
+  <div id="dl">${Array.from({length:hi-lo+1},(_,i)=>`<button data-n="${lo+i}">${lo+i}</button>`).join('')}</div><button class="pri hot" id="bk">Je parie</button>`;
+  const dl=$('#dl'),upd=()=>{const idx=Math.max(0,Math.min(hi-lo,Math.round(dl.scrollLeft/W))),v=lo+idx,ht=(v-lo)/((hi-lo)||1);
+    [...dl.children].forEach((b,i)=>{const d=Math.abs(dl.scrollLeft/W-i);b.style.transform=`scale(${1.3-Math.min(d*.3,.6)})`;b.style.opacity=1-Math.min(d*.28,.65)});
+    if(v!==cur){const up=v>cur;cur=v;navigator.vibrate&&navigator.vibrate(6);const bn=$('#bn');bn.innerHTML=`<span>${v}</span>`;bn.firstChild.style.animationDirection='normal';
+      for(const id of ['gl','pp']){const e=$('#'+id);e&&e.style.setProperty('--ht',ht)}bp.style.setProperty('--ht',ht);
+      $('#gl').style.setProperty('--ht',ht);$('#pp').style.setProperty('--ht',ht);
+      $('#pp').querySelectorAll('.sk').forEach(x=>x.remove());for(let i=0;i<3+Math.round(ht*14);i++){const s=document.createElement('i');s.className='sk';s.style.setProperty('--x',20+Math.random()*60+'%');s.style.setProperty('--d',(1.6-ht*.9+Math.random()*.6)+'s');s.style.animationDelay=Math.random()*1.5+'s';$('#pp').appendChild(s)}}};
+  let q=0;dl.onscroll=()=>{cancelAnimationFrame(q);q=requestAnimationFrame(upd)};
+  dl.onclick=e=>{const b=e.target.closest('button');if(b)dl.scrollTo({left:(+b.dataset.n-lo)*W,behavior:'smooth'})};
+  dl.scrollLeft=(Math.min(hi,Math.max(lo,1))-lo)*W;upd();
+  $('#bk').onclick=()=>update(DB('state'),{['bt/'+me()]:lo+Math.max(0,Math.min(hi-lo,Math.round(dl.scrollLeft/W)))})}
+function pile(){const pl_=$('#pl'),tr=(k,s,v)=>{if(pl_.querySelector(`[data-k="${k}-${s}"]`))return;const [a,b]=sp(s),[c,d]=pp(s),t=document.createElement('div');
+    t.className='pc';t.dataset.k=k+'-'+s;t.dataset.tr=k;t.style.cssText=`--l0:${a}%;--t0:${b}%;--l1:${c}%;--t1:${d}%;--r:${(Math.random()*24-12)|0}deg`;t.innerHTML=card(v);pl_.appendChild(t)};
+  Object.entries(S.tb||{}).forEach(([s,v])=>tr(S.tc,s,v));
+  if(S.lt&&S.lt.n>sw){sw=S.lt.n;const idx=S.lt.n%100-1,w=S.lt.w;Object.entries(S.lt.c).forEach(([s,v])=>tr(idx,s,v));
+    setTimeout(()=>{const [x,y]=sp(w);pl_.querySelectorAll(`[data-tr="${idx}"]`).forEach(e=>{e.style.setProperty('--l2',x+'%');e.style.setProperty('--t2',y+'%');e.classList.add('sw');setTimeout(()=>e.remove(),600)})},1100)}}
+function score(){const ov=$('#ov'),over=meta.st==='over';
+  if(S.ph!=='score'&&!over){ov.className='ov';ov.dataset.k='';return}
+  const key=S.k+(over?'o':'s');if(ov.dataset.k===key)return;ov.dataset.k=key;
+  const rows=S.o.map((_,i)=>({i,p:N(S.p,i),d:N(S.d,i),ok:N(S.ok,i)}));
+  if(over){const b=Math.min(...rows.map(r=>r.p));ov.innerHTML=`<div class="panel"><h2>Fin de partie</h2>${[...rows].sort((a,b)=>a.p-b.p).map((r,k)=>`<div class="rw" style="animation-delay:${k*.15}s"><span>${r.p===b?'🏆 ':''}${esc(nm(r.i))}</span><span>${chl(r.p)||'0'} ${r.p}</span></div>`).join('')}
+    ${meta.host===user.uid?'<button class="pri hot" data-a="again">Rejouer</button>':'<p class="sub">L\'hôte peut relancer une partie.</p>'}<button data-a="quit">Quitter</button></div>`}
+  else ov.innerHTML=`<div class="panel"><h2>Manche ${S.k} terminée</h2>${rows.map(r=>`<div class="rw" style="animation-delay:${r.i*.12}s"><span>${esc(nm(r.i))}<small class="sub"> · pari ${A(S.bt,r.i)}, gagné ${N(S.w,r.i)}</small></span><span class="d ${r.d>0?'bad':r.d<0?'ok':''}">${r.d>0?'+'+r.d+' '+chl(1):r.d<0?r.d+' '+chl(1):'✓'}</span></div>`).join('')}
+    <div class="nx"><i></i></div>${act()[0]===user.uid?'<button data-a="skip">Manche suivante</button>':'<p class="sub" style="text-align:center">La prochaine manche arrive…</p>'}</div>`;
+  ov.classList.add('on')}
+/* ---- actions ---- */
+function play(v){const i=me(),n=S.o.length;if(S.ph!=='play'||S.t!==i)return;
+  const c=v===0?56:v,nh=hand.filter(x=>x!==c),u={['hands/'+user.uid]:nh.length?nh:null},tb={...S.tb,[i]:v};
+  if(Object.keys(tb).length<n){u['state/tb/'+i]=v;u['state/t']=(i+1)%n}
+  else{const w=win(S.m,tb),tc=S.tc+1,end=tc===S.h;
+    Object.assign(u,{'state/tb':null,'state/lt':{c:tb,w,n:S.k*100+tc},'state/tc':tc,'state/t':end?null:w,'state/ld':w,['state/w/'+w]:N(S.w,w)+1});
+    if(end){const W=S.o.map((_,s)=>N(S.w,s)+(s===w?1:0)),ok=W.map((x,s)=>chk(S.m,x,N(S.bt,s)));let d=ok.map(r=>r?0:S.m==='dbl'?2:1);
+      if(S.m==='har'&&ok.every(x=>x))d=d.map(()=>-1);const NP=S.o.map((_,s)=>Math.max(0,N(S.p,s)+d[s]));
+      Object.assign(u,{'state/ph':'score','state/p':NP,'state/d':d,'state/ok':ok.map(x=>x?1:0)});if(NP.some(x=>x>=7))u['meta/st']='over'}}
+  $('#jk').classList.remove('on');update(DB(),u)}
+function rules(){$('#mb').innerHTML=`<h2>Règles</h2><ul><li>À chaque manche, chacun reçoit 3 à 6 cartes (1 à 55 + un Joker).</li><li>Tout le monde parie <b>en secret</b> sur le nombre de plis qu'il va gagner ; les paris sont révélés ensemble.</li><li>On joue une carte par pli, sans obligation de couleur : la plus forte gagne et ouvre le pli suivant.</li><li>Le Joker se joue « haut » (56) ou « bas » (0).</li><li>Chaque manche a une <b>mission</b> qui change une règle.</li><li>Pari raté = 1 piment. Quand quelqu'un atteint 7 piments, la partie s'arrête : le moins de piments gagne.</li></ul><button class="pri" data-a="close">Fermer</button>`;$('#md').classList.add('on')}
+document.addEventListener('click',async e=>{
+  const j=e.target.closest('[data-j]');if(j)return play(+j.dataset.j);
+  const c=e.target.closest('#hd .c');if(c&&S&&S.ph==='play'&&S.t===me()){const v=+c.dataset.v;return v===56?$('#jk').classList.add('on'):play(v)}
+  if(e.target.id==='md'){$('#md').classList.remove('on');return}
+  const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a;
+  if(a==='rules')rules();else if(a==='close')$('#md').classList.remove('on');
+  else if(a==='th'){const d=document.documentElement.dataset,v=d.t==='dark'?'light':'dark';d.t=v;localStorage.setItem('fgt',v)}
+  else if(a==='start')deal(1,null);
+  else if(a==='skip')deal(S.k+1,S.o.map((_,i)=>N(S.p,i)));
+  else if(a==='again')update(DB(),{state:null,hands:null,'meta/st':'lobby'});
+  else if(a==='quit'){if(meta.st==='play'&&!confirm('Quitter met fin à la partie pour tout le monde. Continuer ?'))return;
+    try{if(meta.st==='play')await update(DB(),{'meta/st':'over'});else if(meta.st==='lobby')await(meta.host===user.uid?set(DB(),null):set(DB('players/'+user.uid),null))}catch(x){}
+    set(ref(db,'live/'+user.uid),null).catch(()=>{});location.href='index.html'}
+});
+</script>
+</body></html>
